@@ -9,7 +9,7 @@ import {
     FlatList,
     Dimensions,
     ActivityIndicator,
-    Alert 
+    Alert
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
@@ -20,9 +20,9 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }) => {
 
     const productName = item.product?.name || 'Product Name';
     const brandName = item.product?.brand || 'No Brand';
-    const variantPrice = item.selectedVariant?.price; 
-    const variantOriginalPrice = item.selectedVariant?.originalPrice || variantPrice; 
-    const itemImage = item.selectedVariant?.images?.[0] || 'https://placehold.co/160x120/E0E0E0/333333?text=No+Image'; 
+    const variantPrice = item.selectedVariant?.price;
+    const variantOriginalPrice = item.selectedVariant?.originalPrice || variantPrice;
+    const itemImage = item.selectedVariant?.images?.[0] || 'https://placehold.co/160x120/E0E0E0/333333?text=No+Image';
 
     const discountPercentage = (variantOriginalPrice && variantPrice && variantOriginalPrice > variantPrice)
         ? ((variantOriginalPrice - variantPrice) / variantOriginalPrice * 100).toFixed(0)
@@ -75,7 +75,7 @@ const RecommendedItem = ({ item }) => {
     const productImage = item.variants?.[0]?.images?.[0] || 'https://placehold.co/160x120/E0E0E0/333333?text=No+Image';
     const productPrice = item.variants?.[0]?.price || item.price || '0';
     const originalPrice = item.variants?.[0]?.mrp || item.offerPrice || productPrice;
-    
+
     const discountPercentage = (originalPrice && productPrice && originalPrice > productPrice)
         ? ((originalPrice - productPrice) / originalPrice * 100).toFixed(0)
         : 0;
@@ -104,7 +104,7 @@ const RecommendedItem = ({ item }) => {
 };
 
 function MyCart({ navigation, route }) {
-    const [cartItems, setCartItems] = useState([]); 
+    const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [trendingProducts, setTrendingProducts] = useState([]);
@@ -166,7 +166,7 @@ function MyCart({ navigation, route }) {
                 } else if (!Array.isArray(data)) {
 
                     console.warn("API returned non-array data, attempting to interpret as single cart or empty:", data);
-                    itemsToSet = []; 
+                    itemsToSet = [];
                 }
                 setCartItems(itemsToSet);
             } else {
@@ -181,9 +181,9 @@ function MyCart({ navigation, route }) {
     };
 
     const handleRemoveItem = async (itemId) => {
-             const originalCartItems = cartItems
+        const originalCartItems = cartItems
         setCartItems(cartItems.filter(item => item._id !== itemId));
-        
+
         try {
             const response = await fetch(`${CART_API_BASE_URL}${itemId}`, { // DELETE endpoint with item ID
                 method: 'DELETE',
@@ -236,7 +236,7 @@ function MyCart({ navigation, route }) {
         ));
 
         try {
-            const response = await fetch(`${CART_API_BASE_URL}update/${itemId}`, { // Assuming an update endpoint like /api/addtocart/update/:id
+            const response = await fetch(`${CART_API_BASE_URL}${itemId}`, { // Assuming an update endpoint like /api/addtocart/update/:id
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${TOKEN}`,
@@ -249,11 +249,11 @@ function MyCart({ navigation, route }) {
             console.log("API Response Data (handleUpdateQuantity):", data);
 
             if (!response.ok) {
-                setCartItems(originalCartItems); 
+                setCartItems(originalCartItems);
                 Alert.alert('Error', data.message || 'Failed to update quantity.');
             }
         } catch (err) {
-            setCartItems(originalCartItems); 
+            setCartItems(originalCartItems);
             Alert.alert('Error', 'Network error or unable to connect to server. Could not update quantity.');
             console.error("Error updating quantity:", err);
         }
@@ -268,9 +268,9 @@ function MyCart({ navigation, route }) {
 
         // Initial fetch when component mounts
         fetchTrendingProducts();
-        
+
         return unsubscribe;
-    }, [navigation]); 
+    }, [navigation]);
 
     const totalAmount = cartItems.reduce((sum, item) => sum + (item.selectedVariant?.price || 0) * item.quantity, 0);
     const totalSaved = cartItems.reduce((sum, item) => {
@@ -280,7 +280,7 @@ function MyCart({ navigation, route }) {
     }, 0);
 
 
-    
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -328,7 +328,7 @@ function MyCart({ navigation, route }) {
 
             {/* Delivery Location */}
             <View style={styles.deliveryContainer}>
-                <Image source={require('../assets/images/location.png')} style={styles.locationIcon } />
+                <Image source={require('../assets/images/location.png')} style={styles.locationIcon} />
                 <Text style={styles.deliveryText}>Deliver to - Delhi NCR , 110015</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('AddressBook')}>
                     <Text style={styles.changeButtonText}>Change</Text>
@@ -406,7 +406,14 @@ function MyCart({ navigation, route }) {
                         <Text style={styles.totalAmount}>₹{totalAmount}</Text>
                         <Text style={styles.totalSaved}>You saved ₹{totalSaved}</Text>
                     </View>
-                    <TouchableOpacity style={styles.proceedButton} onPress={() => navigation.navigate('')}>
+                    <TouchableOpacity style={styles.proceedButton} onPress={() => {
+                        // Navigate to payment screen with cart data
+                        navigation.navigate('PaymentScreen', {
+                            cartItems: cartItems,
+                            totalAmount: totalAmount,
+                            selectedAddress: null // You can pass selected address if available
+                        });
+                    }}>
                         <Text style={styles.proceedButtonText}>Proceed</Text>
                     </TouchableOpacity>
                 </View>

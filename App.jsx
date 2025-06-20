@@ -21,6 +21,8 @@ import OrderDetails from './src/pages/OrderDetails';
 import MyAccount from './src/pages/MyAccount';
 import EditProfile from './src/pages/EditProfile';
 import AddressBook from './src/pages/AddressBook';
+import PaymentScreen from './src/pages/PaymentScreen';
+import OrderSuccess from './src/pages/OrderSuccess';
 const Stack = createNativeStackNavigator();
 
 function App() {
@@ -37,7 +39,6 @@ function App() {
           <Stack.Screen name="Splash" component={SplashScreen} />
           <Stack.Screen name="Profile" component={Profile} />
           <Stack.Screen name="Slider" component={Slider} />
-          
           <Stack.Screen name="Home" component={Home} />
           <Stack.Screen name="Categories" component={Categories} />
           <Stack.Screen name="ClothingShoesJewelry" component={ClothingShoesJewelry} />
@@ -53,7 +54,8 @@ function App() {
           <Stack.Screen name="MyAccount" component={MyAccount} />
           <Stack.Screen name="EditProfile" component={EditProfile} />
           <Stack.Screen name = "AddressBook" component={AddressBook}/>
-        
+          <Stack.Screen name = "PaymentScreen" component={PaymentScreen} options={{ headerShown:false}}/>
+          <Stack.Screen name = "OrderSuccess" component={OrderSuccess} options={{ headerShown:false}}/>
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

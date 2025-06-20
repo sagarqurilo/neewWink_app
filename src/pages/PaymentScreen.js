@@ -19,6 +19,7 @@ const PaymentScreen = ({ navigation, route }) => {
     const { objectCart } = route.params;
 
     const ORDER_API_URL = 'https://qdp1vbhp-2000.inc1.devtunnels.ms/api/order/create_order';
+    const VERIFY_API_URL = 'https://qdp1vbhp-2000.inc1.devtunnels.ms/api/order/verify_rz_order';
     const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NTJhZTY5N2RhZDEyZmM2N2Q5ZDVmYyIsInBob25lIjoiNzk4MjkwMDc3MCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzUwMjQ5MDc3LCJleHAiOjE3NTA4NTM4Nzd9.SBpXqkVhAyLYnb2F8sSsjudsA7Q_mPdTdgUSf5jcZ94';
 
     const RAZORPAY_KEY_ID = 'rzp_test_QQ2xEaZTHS3IDN';
@@ -40,6 +41,50 @@ const PaymentScreen = ({ navigation, route }) => {
             variantId: item.selectedVariant?._id || item.variantId,
             quantity: item.quantity
         }));
+    };
+
+    // New function to verify payment
+    const verifyPayment = async (paymentData) => {
+        try {
+            console.log("Starting payment verification...", paymentData);
+            
+            const verificationData = {
+                razorpayOrderId: paymentData.razorpay_order_id,
+                razorpayPaymentId: paymentData.razorpay_payment_id,
+                razorpaySignature: paymentData.razorpay_signature
+            };
+
+            console.log("Verification data being sent:", verificationData);
+
+            const response = await fetch(VERIFY_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${TOKEN}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(verificationData),
+            });
+
+            const verificationResult = await response.json();
+            console.log("Verification response:", verificationResult);
+
+            if (response.ok && verificationResult.status) {
+                console.log("Payment verification successful");
+                return { success: true, data: verificationResult };
+            } else {
+                console.log("Payment verification failed:", verificationResult);
+                return { 
+                    success: false, 
+                    error: verificationResult.message || 'Payment verification failed' 
+                };
+            }
+        } catch (error) {
+            console.error('Payment verification error:', error);
+            return { 
+                success: false, 
+                error: 'Network error during verification' 
+            };
+        }
     };
 
     const handleCashOnDelivery = async () => {
@@ -174,7 +219,7 @@ const PaymentScreen = ({ navigation, route }) => {
                     console.log("rz:::", RazorpayCheckout);
                     const paymentData = await RazorpayCheckout.open(options);
                     console.log("Payment Success Data:", paymentData);
-                    handlePaymentSuccess(paymentData, orderId);
+                    await handlePaymentSuccess(paymentData, orderId);
                 } catch (paymentError) {
                     console.log("Payment Error:", paymentError);
                     handlePaymentError(paymentError);
@@ -191,21 +236,73 @@ const PaymentScreen = ({ navigation, route }) => {
         }
     };
 
-    const handlePaymentSuccess = (paymentData, orderId) => {
-        Alert.alert(
-            'Payment Successful!',
-            `Payment ID: ${paymentData.razorpay_payment_id}`,
-            [
-                {
-                    text: 'OK',
-                    onPress: () => navigation.navigate('OrderSuccess', {
-                        orderId,
-                        paymentMethod: 'Online Payment',
-                        paymentId: paymentData.razorpay_payment_id
-                    })
-                }
-            ]
-        );
+    const handlePaymentSuccess = async (paymentData, orderId) => {
+        console.log("Processing payment success...");
+        
+        // Show loading state during verification
+        setLoading(true);
+        
+        try {
+            // Verify the payment
+            const verificationResult = await verifyPayment(paymentData);
+            
+            if (verificationResult.success) {
+                // Payment verified successfully
+                Alert.alert(
+                    'Payment Successful!',
+                    `Payment verified and completed successfully.\nPayment ID: ${paymentData.razorpay_payment_id}`,
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => navigation.navigate('OrderSuccess', {
+                                orderId,
+                                paymentMethod: 'Online Payment',
+                                paymentId: paymentData.razorpay_payment_id,
+                                verified: true
+                            })
+                        }
+                    ]
+                );
+            } else {
+                // Payment verification failed
+                Alert.alert(
+                    'Payment Verification Failed',
+                    `Payment was processed but verification failed: ${verificationResult.error}\n\nPlease contact support with Payment ID: ${paymentData.razorpay_payment_id}`,
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => navigation.navigate('OrderSuccess', {
+                                orderId,
+                                paymentMethod: 'Online Payment',
+                                paymentId: paymentData.razorpay_payment_id,
+                                verified: false,
+                                verificationError: verificationResult.error
+                            })
+                        }
+                    ]
+                );
+            }
+        } catch (error) {
+            console.error('Error during verification process:', error);
+            Alert.alert(
+                'Verification Error',
+                `Payment completed but verification failed due to network error.\nPayment ID: ${paymentData.razorpay_payment_id}\n\nPlease contact support.`,
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => navigation.navigate('OrderSuccess', {
+                            orderId,
+                            paymentMethod: 'Online Payment',
+                            paymentId: paymentData.razorpay_payment_id,
+                            verified: false,
+                            verificationError: 'Network error during verification'
+                        })
+                    }
+                ]
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handlePaymentError = (error) => {

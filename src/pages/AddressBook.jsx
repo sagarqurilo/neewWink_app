@@ -10,13 +10,14 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+// import { useNavigation } from '@react-navigation/native';
 
-const AddressBookScreen = () => {
-  const navigation = useNavigation();
+const AddressBookScreen = ({ navigation, route}) => {
+  // const navigation = useNavigation();
   const [addresses, setAddresses] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [loading, setLoading] = useState(false);
+  const {cartItems, totalAmount} = route.params;
 
   useEffect(() => {
     fetchAddresses();
@@ -27,6 +28,7 @@ const AddressBookScreen = () => {
 
     try {
       setLoading(true);
+      console.log('kkkkkkkkkkkkkkkk', cartItems)
       const response = await fetch('https://qdp1vbhp-2000.inc1.devtunnels.ms/api/auth/me', {
         method: 'GET',
         headers: {
@@ -114,7 +116,7 @@ const AddressBookScreen = () => {
 
         {/* Save Button */}
         <View style={styles.saveButtonContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.saveBtn}
             onPress={() => {
               if (selectedIndex === null) {
@@ -126,7 +128,9 @@ const AddressBookScreen = () => {
                   ]
                 );
               } else {
-                navigation.navigate('MyCart');
+                navigation.navigate('PaymentScreen', {
+                  selectedAddress: addresses[selectedIndex], cartItems, totalAmount
+                });
               }
             }}
           >
@@ -299,3 +303,4 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
   },
 });
+
