@@ -23,6 +23,7 @@ import {
     moderateScale,
     fontScale,
 } from '../component/ResponsiveMetrix';
+import BottomNavigationBar from './BottomNavigationBar';
 
 const Home = () => {
     const navigation = useNavigation();
@@ -160,32 +161,37 @@ const Home = () => {
     };
 
     const getCurrentLocation = () => {
-        console.log("Getting current location...");
-        setLoadingNearbyStores(true);
-        setLocationError(null);
-        Geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                console.log('Location obtained:', { latitude, longitude });
-                setCurrentLocation({ latitude, longitude });
-                fetchNearbyStores(latitude, longitude);
-            },
-            (error) => {
-                console.error('Geolocation error:', error);
-                let errorMessage = 'Could not retrieve your current location.';
-                if (error.code === error.PERMISSION_DENIED) {
-                    errorMessage = 'Location permission was denied. Please enable it in app settings.';
-                } else if (error.code === error.POSITION_UNAVAILABLE) {
-                    errorMessage = 'Location information is unavailable.';
-                } else if (error.code === error.TIMEOUT) {
-                    errorMessage = 'Location request timed out. Please try again.';
-                }
-                setLocationError(errorMessage);
-                setLoadingNearbyStores(false);
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
-        );
-    };
+    console.log("Getting current location...");
+    setLoadingNearbyStores(true);
+    setLocationError(null);
+    Geolocation.getCurrentPosition(
+        (position) => {
+            const { latitude, longitude } = position.coords;
+            console.log('Location obtained:', { latitude, longitude });
+            setCurrentLocation({ latitude, longitude });
+            fetchNearbyStores(latitude, longitude);
+        },
+        (error) => {
+            console.error('Geolocation error:', error);
+            let errorMessage = 'Could not retrieve your current location.';
+            if (error.code === 1) {
+                errorMessage = 'Location permission was denied. Please enable it in app settings.';
+            } else if (error.code === 2) {
+                errorMessage = 'Location information is unavailable.';
+            } else if (error.code === 3) {
+                errorMessage = 'Location request timed out. Please move to an open area or check your settings.';
+            }
+            setLocationError(errorMessage);
+            setLoadingNearbyStores(false);
+        },
+        {
+            enableHighAccuracy: false, // <- changed
+            timeout: 30000,            // <- increased timeout
+            maximumAge: 10000
+        }
+    );
+};
+
 
     const fetchNearbyStores = async (lat, long) => {
         console.log("Fetching nearby stores with coordinates:", { lat, long });
@@ -436,76 +442,7 @@ const Home = () => {
             </ScrollView>
 
             {/* Bottom Navigation */}
-            <View style={styles.bottomNav}>
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => {
-                        setActiveBottomTab('Home');
-                        navigation.navigate('Home');
-                    }}
-                >
-                    <Image
-                        source={require('../assets/images/homelogo.png')}
-                        style={[
-                            styles.navIcon,
-                            activeBottomTab === 'Home' && { tintColor: '#406FF3' }
-                        ]}
-                        resizeMode="contain"
-                    />
-                    <Text style={activeBottomTab === 'Home' ? styles.navTextActive : styles.navText}>Home</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => {
-                        setActiveBottomTab('Categories');
-                        navigation.navigate('Categories');
-                    }}
-                >
-                    <Image
-                        source={require('../assets/images/categeroies.png')}
-                        style={[
-                            styles.navIcon,
-                            activeBottomTab === 'Categories' && { tintColor: '#3575FF' }
-                        ]}
-                        resizeMode="contain"
-                    />
-                    <Text style={activeBottomTab === 'Categories' ? styles.navTextActive : styles.navText}>Categories</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => {
-                        setActiveBottomTab('Wishlist');
-                        navigation.navigate('WishList');
-                    }}
-                >
-                    <Image
-                        source={require('../assets/images/heartlogo.png')}
-                        style={[
-                            styles.navIcon,
-                            activeBottomTab === 'Wishlist' && { tintColor: '#3575F6' }
-                        ]}
-                        resizeMode="contain"
-                    />
-                    <Text style={activeBottomTab === 'Wishlist' ? styles.navTextActive : styles.navText}>Wishlist</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => {
-                        setActiveBottomTab('Cart');
-                        navigation.navigate('MyCart');
-                    }}
-                >
-                    <Image
-                        source={require('../assets/images/cartlogo.png')}
-                        style={[
-                            styles.navIcon,
-                            activeBottomTab === 'Cart' && { tintColor: '#406FF3' }
-                        ]}
-                        resizeMode="contain"
-                    />
-                    <Text style={activeBottomTab === 'Cart' ? styles.navTextActive : styles.navText}>Cart</Text>
-                </TouchableOpacity>
-            </View>
+            <BottomNavigationBar />
         </SafeAreaView>
     );
 };

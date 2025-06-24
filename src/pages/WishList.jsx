@@ -7,16 +7,31 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
+  Dimensions,
+  PixelRatio, 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const guidelineBaseWidth = 375; 
+const guidelineBaseHeight = 667; 
+
+const scale = size => (SCREEN_WIDTH / guidelineBaseWidth) * size;
+const verticalScale = size => (SCREEN_HEIGHT / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor; 
+const responsiveFontSize = (size) => {
+    const newSize = moderateScale(size, 0.5); 
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+};
 
 const WishlistScreen = () => {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
-  const USER_AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NTJhZTY5N2RhZDEyZmM2N2Q5ZDVmYyIsInBob25lIjoiNzk4MjkwMDc3MCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzUwMjQ5MDc3LCJleHAiOjE3NTA4NTM4Nzd9.SBpXqkVhAyLYnb2F8sSsjudsA7Q_mPdTdgUSf5jcZ94' ;
+  const USER_AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NTJhZTY5N2RhZDEyZmM2N2Q5ZDVmYyIsInBob25lIjoiNzk4MjkwMDc3MCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzUwNzQ3NTA4LCJleHAiOjE3NTEzNTIzMDh9.wsB8rNth3RrLjH4FQ7s4D7tf1TwCo0kNUqzTNHtqJvM' ;
    const fetchWishlistData = useCallback(async () => {
     setLoading(true);
     try {
@@ -52,10 +67,10 @@ const WishlistScreen = () => {
 
   const renderItem = ({ item }) => {
     const product = item.product;
-    const variant = item.variants?.[0];
+    const variant = item.variants?.[0]; // This was original and kept the same
     const image = variant?.images?.[0];
     const price = variant?.price;
-    const name = item.name;
+    const name = item.name; // This was original and kept the same
 
     return (
       <View style={styles.card}>
@@ -90,21 +105,19 @@ const WishlistScreen = () => {
     return (
       <SafeAreaView style={styles.center}>
         <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={{ marginTop: 10 }}>Loading wishlist...</Text>
+        <Text style={{ marginTop: verticalScale(10) }}>Loading wishlist...</Text>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerLeft}>
-          <Text style={styles.backArrow}>&lt;</Text>
+          <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" style={styles.backArrow} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Wishlist</Text>
-          {/* <Text style={styles.headerSubtitle}>8 Items</Text> */}
         </View>
         <View style={styles.headerRight}>
           <Image source={require('../assets/images/search.png')} style={styles.headerIcon} />
@@ -116,7 +129,7 @@ const WishlistScreen = () => {
         data={wishlistItems}
         keyExtractor={(item) => item?.product?._id || item._id}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 10 }}
+        contentContainerStyle={{ paddingBottom: verticalScale(20), paddingHorizontal: scale(10) }}
         numColumns={2}
       />
     </SafeAreaView>
@@ -130,121 +143,123 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
+    paddingHorizontal: scale(15),
+    paddingVertical: verticalScale(10),
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#eee',
     backgroundColor: '#fff',
   },
   headerLeft: {
-    padding: 5,
+    padding: moderateScale(5), 
   },
   backArrow: {
-    fontSize: 24,
+    fontSize: responsiveFontSize(24), 
     fontWeight: 'bold',
   },
   headerCenter: {
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18), 
     fontWeight: 'bold',
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: '#777',
   },
   headerRight: {
     flexDirection: 'row',
-    gap: 15,
+    gap: scale(15), 
   },
   headerIcon: {
-    width: 24,
-    height: 24,
+    width: moderateScale(24),
+    height: moderateScale(24),
     resizeMode: 'contain',
   },
   card: {
     flex: 1,
     backgroundColor: '#fff',
-    margin: 5,
-    borderRadius: 10,
-    borderWidth: 1,
+    margin: moderateScale(5),
+    borderRadius: moderateScale(10), 
+    borderWidth: moderateScale(1),
     borderColor: '#ddd',
     alignItems: 'flex-start',
-    padding: 8,
+    padding: moderateScale(8),
     position: 'relative',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: verticalScale(2) }, // Responsive
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: moderateScale(4), // Responsive
+    elevation: moderateScale(3), // Responsive
+    maxWidth: (SCREEN_WIDTH / 2) - scale(10), 
   },
   cardHeader: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: verticalScale(10), // Responsive
+    right: scale(10), // Responsive
     flexDirection: 'column',
-    gap: 2,
+    gap: verticalScale(2), // Responsive
+    zIndex: 1, // Ensure icons are clickable
   },
   heartIcon: {
-    width: 20,
-    height: 20,
+    width: moderateScale(20), // Responsive
+    height: moderateScale(20), // Responsive
     resizeMode: 'contain',
   },
   shareIcon: {
-    width: 20,
-    height: 20,
+    width: moderateScale(20), // Responsive
+    height: moderateScale(20), // Responsive
     resizeMode: 'contain',
   },
   image: {
-    width: 100,
-    height: 100,
+    width: moderateScale(100), // Responsive
+    height: moderateScale(100), // Responsive
     resizeMode: 'contain',
-    marginBottom: 8,
+    marginBottom: verticalScale(8), // Responsive
   },
   noImage: {
-    width: 100,
-    height: 100,
+    width: moderateScale(100), // Responsive
+    height: moderateScale(100), // Responsive
     backgroundColor: '#ccc',
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
     fontWeight: 'bold',
-    fontSize: 14,
-    marginVertical: 4,
+    fontSize: responsiveFontSize(14), // Responsive
+    marginVertical: verticalScale(4), // Responsive
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12), // Responsive
     color: '#777',
-    marginBottom: 4,
+    marginBottom: verticalScale(4), // Responsive
   },
   price: {
     color: '#000',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: responsiveFontSize(14), // Responsive
   },
   rating: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12), // Responsive
     color: '#888',
-    marginBottom: 6,
+    marginBottom: verticalScale(6), // Responsive
   },
   buttonRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: verticalScale(6), // Responsive
     justifyContent: 'space-between',
     width: '100%',
   },
   buyNow: {
     backgroundColor: '#407BFF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: scale(8), // Responsive
+    paddingVertical: verticalScale(4), // Responsive
+    borderRadius: moderateScale(6), // Responsive
   },
   buyNowText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: responsiveFontSize(12), // Responsive
     fontWeight: '600',
   },
   cartIcon: {

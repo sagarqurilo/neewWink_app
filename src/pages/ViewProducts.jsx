@@ -8,12 +8,26 @@ import {
   ActivityIndicator,
   StyleSheet,
   FlatList,
+  Dimensions,
+  PixelRatio,
+  SafeAreaView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
+// Responsive Metrics Utility
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const guidelineBaseWidth = 375;
+const guidelineBaseHeight = 667;
 
+const scale = size => (SCREEN_WIDTH / guidelineBaseWidth) * size;
+const verticalScale = size => (SCREEN_HEIGHT / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
 
+const responsiveFontSize = (size) => {
+    const newSize = moderateScale(size, 0.5);
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+};
 
 const ViewProducts = () => {
   const [productData, setProductData] = useState(null);
@@ -28,7 +42,7 @@ const ViewProducts = () => {
   const navigation = useNavigation();
   const { productId } = route.params;
 
-  const USER_AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NTJhZTY5N2RhZDEyZmM2N2Q5ZDVmYyIsInBob25lIjoiNzk4MjkwMDc3MCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzUwMjQ5MDc3LCJleHAiOjE3NTA4NTM4Nzd9.SBpXqkVhAyLYnb2F8sSsjudsA7Q_mPdTdgUSf5jcZ94'; // Your hardcoded token for now
+  const USER_AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NTJhZTY5N2RhZDEyZmM2N2Q5ZDVmYyIsInBob25lIjoiNzk4MjkwMDc3MCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzUwMjQ5MDc3LCJleHAiOjE3NTA4NTM4Nzd9.SBpXqkVhAyLYnb2F8sSsjudsA7Q_mPdTdgUSf5jcZ94';
 
   useEffect(() => {
     setLoading(true);
@@ -172,7 +186,6 @@ const ViewProducts = () => {
     }
   };
 
-  // Handle color selection, adjusting size if current size is not available for new color
   const handleColorSelect = (color) => {
     setSelectedColor(color);
     if (selectedSize && !getAvailableSizesForColor(color).includes(selectedSize)) {
@@ -181,7 +194,6 @@ const ViewProducts = () => {
     }
   };
 
-  // Handle adding product to cart
   const handleAddToCart = async () => {
     if (!productData || !selectedVariant) {
       setMessage("Please select a valid product variant.");
@@ -199,7 +211,7 @@ const ViewProducts = () => {
         body: JSON.stringify({
           product: productData._id,
           variantId: selectedVariant._id,
-          quantity: 1, // Always add 1 for now, quantity can be adjusted in cart
+          quantity: 1, 
         }),
       });
 
@@ -207,7 +219,6 @@ const ViewProducts = () => {
 
       if (response.ok) {
         setMessage("Item added to cart!");
-        // Optional: Trigger a refresh on MyCart screen if it's open
         navigation.navigate('MyCart', { cartItemAdded: true });
       } else {
         setMessage(`Failed to add item: ${data.message || 'Unknown error'}`);
@@ -258,7 +269,6 @@ const ViewProducts = () => {
     }
   };
 
-  // Render loading state
   if (loading) {
     return (
       <SafeAreaView style={styles.center}>
@@ -283,8 +293,8 @@ const ViewProducts = () => {
   const currentOriginalPrice = selectedVariant?.originalPrice;
   const currentImages = selectedVariant?.images || [];
   const discountPercentage = currentOriginalPrice && currentPrice && currentOriginalPrice > currentPrice
-    // ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
-    // : null;
+    ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
+    : null;
 
 
   return (
@@ -292,16 +302,18 @@ const ViewProducts = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.imageSection}>
           <Image
-            source={{ uri: mainImage }}
+            source={{ uri: mainImage || 'https://placehold.co/400x400/E0E0E0/333333?text=No+Image' }}
             style={styles.mainProductImage}
           />
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backText}>{'<'}</Text>
+            <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
           </TouchableOpacity>
-          {/* Wishlist Button */}
+
+          
+          
           <TouchableOpacity
             style={styles.wishlistButton}
             onPress={handleWishlistToggle}
@@ -310,10 +322,8 @@ const ViewProducts = () => {
               source={require('../assets/images/heart1.png')}
               style={[
                 styles.wishlistIcon,
-                // Apply tintColor to the outline icon for visibility,
-                // and for the filled icon if you want to override its natural color.
-                // The uploaded heartlogo.png is blue, so we'll use a blue tint.
-                { tintColor: isWishlisted ? '#406FF3' : '#fff' } // Blue when wishlisted, white when outline
+        
+                { tintColor: isWishlisted ? '#406FF3' : '#fff' }
               ]}
             />
           </TouchableOpacity>
@@ -327,7 +337,7 @@ const ViewProducts = () => {
               contentContainerStyle={styles.thumbnailContainer}
               renderItem={({ item }) => (
                 <TouchableOpacity onPress={() => setMainImage(item)}>
-                  <Image source={{ uri: item }} style={styles.thumbnailImage} />
+                  <Image source={{ uri: item || 'https://placehold.co/60x60/E0E0E0/333333?text=No+Image' }} style={styles.thumbnailImage} />
                 </TouchableOpacity>
               )}
             />
@@ -342,7 +352,7 @@ const ViewProducts = () => {
 
           <View style={styles.priceRow}>
             <Text style={styles.price}>₹ {currentPrice}</Text>
-            {currentOriginalPrice && currentOriginalPrice > currentPrice && ( // Only show if there's an actual discount
+            {currentOriginalPrice && currentOriginalPrice > currentPrice && (
               <>
                 <Text style={styles.oldPrice}>₹ {currentOriginalPrice}</Text>
                 {discountPercentage !== null && (
@@ -415,7 +425,6 @@ const ViewProducts = () => {
             </TouchableOpacity>
           </View>
 
-          {/* General message display for cart/wishlist actions */}
           {message && (
             <View style={styles.messageContainer}>
               <Text style={styles.messageText}>{message}</Text>
@@ -445,154 +454,150 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
+    marginTop: verticalScale(10),
+    fontSize: responsiveFontSize(16),
     color: '#666',
   },
   errorText: {
     color: 'red',
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: verticalScale(20),
   },
   retryButton: {
     backgroundColor: '#406FF3',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    paddingVertical: verticalScale(10),
+    paddingHorizontal: scale(20),
+    borderRadius: moderateScale(5),
   },
   retryButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: 'bold',
   },
   imageSection: {
     position: 'relative',
     backgroundColor: '#fff',
-    paddingBottom: 10,
+    paddingBottom: verticalScale(10),
   },
   mainProductImage: {
     width: '100%',
-    height: 400,
+    height: verticalScale(400),
     resizeMode: 'contain',
     backgroundColor: '#fff',
   },
   backButton: {
     position: 'absolute',
-    top: 40,
-    left: 20,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
+    top: verticalScale(40),
+    left: scale(20),
+    zIndex: 1, // Ensure button is clickable
   },
-  backText: {
-    fontSize: 20,
+  backText: { // Not used with MaterialIcons, but kept for completeness
+    fontSize: responsiveFontSize(20),
     color: '#fff',
     fontWeight: 'bold',
   },
   wishlistButton: {
     position: 'absolute',
-    top: 40,
-    right: 20,
+    top: verticalScale(40),
+    right: scale(20),
     backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
+    borderRadius: moderateScale(15),
+    width: moderateScale(30),
+    height: moderateScale(30),
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1, // Ensure button is clickable
   },
   wishlistIcon: {
-    width: 20,
-    height: 20,
+    width: moderateScale(20),
+    height: moderateScale(20),
     resizeMode: 'contain',
   },
   thumbnailContainer: {
-    paddingHorizontal: 15,
-    paddingTop: 10,
+    paddingHorizontal: scale(15),
+    paddingTop: verticalScale(10),
   },
   thumbnailImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 10,
-    borderWidth: 1,
+    width: moderateScale(60),
+    height: moderateScale(60),
+    borderRadius: moderateScale(8),
+    marginRight: scale(10),
+    borderWidth: moderateScale(1),
     borderColor: '#eee',
     resizeMode: 'cover',
   },
   infoSection: {
-    padding: 15,
+    padding: moderateScale(15),
     backgroundColor: '#fff',
-    marginTop: 10,
-    borderRadius: 8,
-    marginHorizontal: 10,
+    marginTop: verticalScale(10),
+    borderRadius: moderateScale(8),
+    marginHorizontal: scale(10),
   },
   unitsText: {
     color: '#004CFF',
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     fontWeight: '600',
-    marginBottom: 5,
+    marginBottom: verticalScale(5),
   },
   title: {
-    fontSize: 22,
+    fontSize: responsiveFontSize(22),
     fontWeight: 'bold',
-    marginVertical: 5,
+    marginVertical: verticalScale(5),
     color: '#333',
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: verticalScale(15),
   },
   price: {
-    fontSize: 20,
+    fontSize: responsiveFontSize(20),
     fontWeight: 'bold',
-    marginRight: 10,
+    marginRight: scale(10),
     color: '#333',
   },
   oldPrice: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     textDecorationLine: 'line-through',
     color: '#999',
-    marginRight: 10,
+    marginRight: scale(10),
   },
   discount: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: 'green',
     fontWeight: 'bold',
   },
   selectSizeLabel: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#333',
-    marginBottom: 10,
+    marginBottom: verticalScale(10),
     fontWeight: '500',
   },
   sizeRow: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: verticalScale(20),
     flexWrap: 'wrap',
   },
   sizeButton: {
-    borderWidth: 1,
+    borderWidth: moderateScale(1),
     borderColor: '#ccc',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 5,
-    marginRight: 10,
-    marginBottom: 10,
+    paddingVertical: verticalScale(8),
+    paddingHorizontal: scale(15),
+    borderRadius: moderateScale(5),
+    marginRight: scale(10),
+    marginBottom: verticalScale(10),
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    minWidth: 50,
+    minWidth: moderateScale(50),
   },
   sizeSelected: {
     backgroundColor: '#406FF3',
     borderColor: '#406FF3',
   },
   sizeText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#333',
     fontWeight: '500',
   },
@@ -611,113 +616,113 @@ const styles = StyleSheet.create({
   colorsSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: verticalScale(20),
   },
   colorsLabel: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: '500',
     color: '#333',
-    marginRight: 10,
+    marginRight: scale(10),
   },
   colorPalette: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   colorCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
+    width: moderateScale(30),
+    height: moderateScale(30),
+    borderRadius: moderateScale(15),
+    borderWidth: moderateScale(1),
     borderColor: '#ddd',
-    marginRight: 10,
-    marginBottom: 10,
+    marginRight: scale(10),
+    marginBottom: verticalScale(10),
   },
   colorSelectedRing: {
-    borderWidth: 2,
+    borderWidth: moderateScale(2),
     borderColor: '#406FF3',
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: verticalScale(15),
   },
   cartButton: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: moderateScale(1),
     borderColor: '#406FF3',
-    padding: 12,
+    padding: moderateScale(12),
     alignItems: 'center',
-    borderRadius: 5,
-    marginRight: 10,
+    borderRadius: moderateScale(5),
+    marginRight: scale(10),
     backgroundColor: '#fff',
   },
   cartText: {
     color: '#406FF3',
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: '600',
   },
   buyButton: {
     flex: 1,
     backgroundColor: '#406FF3',
-    padding: 12,
+    padding: moderateScale(12),
     alignItems: 'center',
-    borderRadius: 5,
+    borderRadius: moderateScale(5),
   },
   buyText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: 'bold',
   },
   messageContainer: {
     backgroundColor: '#e6ffe6',
-    padding: 10,
-    borderRadius: 5,
+    padding: moderateScale(10),
+    borderRadius: moderateScale(5),
     alignItems: 'center',
-    marginTop: 10,
-    marginHorizontal: 10,
+    marginTop: verticalScale(10),
+    marginHorizontal: scale(10),
   },
   messageText: {
     color: '#006400',
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     fontWeight: 'bold',
   },
   couponOfferBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f8ff',
-    borderRadius: 8,
-    padding: 15,
-    marginHorizontal: 10,
-    marginVertical: 15,
+    borderRadius: moderateScale(8),
+    padding: moderateScale(15),
+    marginHorizontal: scale(10),
+    marginVertical: verticalScale(15),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: verticalScale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: moderateScale(2),
+    elevation: moderateScale(2),
   },
   couponIcon: {
-    fontSize: 28,
+    fontSize: responsiveFontSize(28),
     fontWeight: 'bold',
     color: '#406FF3',
-    marginRight: 15,
+    marginRight: scale(15),
   },
   couponTextContainer: {
     flex: 1,
   },
   couponTitle: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 2,
+    marginBottom: verticalScale(2),
   },
   couponSubtitle: {
-    fontSize: 13,
+    fontSize: responsiveFontSize(13),
     color: '#666',
   },
   couponArrow: {
-    fontSize: 20,
+    fontSize: responsiveFontSize(20),
     color: '#666',
-    marginLeft: 15,
+    marginLeft: scale(15),
   },
 });
 

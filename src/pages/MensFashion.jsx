@@ -9,11 +9,23 @@ import {
     StyleSheet,
     FlatList,
     Dimensions,
+    PixelRatio,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-const { width } = Dimensions.get('window');
-const SPACING = 10;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const guidelineBaseWidth = 375;
+const guidelineBaseHeight = 667;
+
+const scale = size => (SCREEN_WIDTH / guidelineBaseWidth) * size;
+const verticalScale = size => (SCREEN_HEIGHT / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
+const responsiveFontSize = (size) => {
+    const newSize = moderateScale(size, 0.5);
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+};
+
+const SPACING = moderateScale(10);
 
 const categories = [
     { title: "Men's fashion", image: require('../assets/images/beauty.png') },
@@ -141,7 +153,6 @@ const allProducts = [
 ];
 
 function ClothingShoesJewelry() {
-
     const navigation = useNavigation();
     const [activeCategory, setActiveCategory] = useState("Men's fashion");
     const [showScrollIndicator, setShowScrollIndicator] = useState(false);
@@ -153,10 +164,6 @@ function ClothingShoesJewelry() {
         }
     };
 
-    const handleCartPress = () => {
-        navigation.navigate('Cart');
-    };
-
     const handleCategoryPress = (category) => {
         setActiveCategory(category);
         setShowScrollIndicator(true);
@@ -164,18 +171,13 @@ function ClothingShoesJewelry() {
 
     return (
         <View style={styles.mainContainer}>
-            <ScrollView style={styles.container}>
-                {/* Back Header */}
+            <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
                 <View style={styles.headerRow}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                    <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
                         <Text style={styles.backArrow}>{'←'}</Text>
                     </TouchableOpacity>
-
                 </View>
 
-
-
-                {/* Categories */}
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={showScrollIndicator}
@@ -203,15 +205,12 @@ function ClothingShoesJewelry() {
                     ))}
                 </ScrollView>
 
-                {/* Banner */}
                 <View style={styles.bannerContainer}>
                     <Image source={require('../assets/images/Placeholder_01.png')} style={styles.bannerImage} />
                     <View style={styles.liveTag}>
                         <TouchableOpacity><Text style={styles.liveText}>Live</Text></TouchableOpacity>
                     </View>
                 </View>
-
-                {/* Top Deals */}
 
                 <Text style={styles.sectionTitle}>Top Deals</Text>
                 <View style={styles.dealsRow}>
@@ -223,10 +222,6 @@ function ClothingShoesJewelry() {
                         </TouchableOpacity>
                     ))}
                 </View>
-
-
-                {/* Trending Products */}
-
 
                 <Text style={styles.sectionTitle}>Trending Products</Text>
                 <FlatList
@@ -267,10 +262,8 @@ function ClothingShoesJewelry() {
                     )}
                 />
 
-                {/* All Products Section */}
                 <Text style={styles.sectionTitle}>All Products</Text>
 
-                {/* Tabs */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsContainer}>
                     {tabs.map((tab) => (
                         <TouchableOpacity
@@ -283,7 +276,6 @@ function ClothingShoesJewelry() {
                     ))}
                 </ScrollView>
 
-                {/* Product Grid */}
                 <FlatList
                     data={allProducts}
                     keyExtractor={(item, index) => index.toString()}
@@ -336,98 +328,98 @@ function ClothingShoesJewelry() {
                         </TouchableOpacity>
                     )}
                 />
-
             </ScrollView>
         </View>
     );
 }
 
+export default ClothingShoesJewelry;
+
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
         backgroundColor: '#fff',
-        marginTop: 30,
-
+        marginTop: verticalScale(30),
     },
     container: {
-        padding: 14,
+        padding: moderateScale(14),
         flex: 1,
     },
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: verticalScale(16),
     },
     backButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: moderateScale(36),
+        height: moderateScale(36),
+        borderRadius: moderateScale(18),
         backgroundColor: '#f0f0f0',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: verticalScale(2) },
         shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 4,
+        shadowRadius: moderateScale(3),
+        elevation: moderateScale(4),
     },
     backArrow: {
-        fontSize: 18,
+        fontSize: responsiveFontSize(18),
     },
     title: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: '600',
-        marginLeft: 10,
+        marginLeft: scale(10),
     },
     searchBox: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#f0f0f0',
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        marginBottom: 16,
+        borderRadius: moderateScale(12),
+        paddingHorizontal: moderateScale(12),
+        paddingVertical: moderateScale(10),
+        marginBottom: verticalScale(16),
     },
     searchIcon: {
-        width: 20,
-        height: 20,
+        width: moderateScale(20),
+        height: moderateScale(20),
         tintColor: '#004CFF',
     },
     searchInput: {
         flex: 1,
-        marginHorizontal: 10,
-        fontSize: 14,
+        marginHorizontal: scale(10),
+        fontSize: responsiveFontSize(14),
     },
     micIcon: {
-        width: 20,
-        height: 30,
-        pading: 5,
+        width: moderateScale(20),
+        height: moderateScale(30),
+        padding: moderateScale(5),
         tintColor: '#004CFF',
     },
     categoryScroll: {
-        marginBottom: 30,
-        marginTop: 5,
+        marginBottom: verticalScale(30),
+        marginTop: verticalScale(5),
     },
     categoryItem: {
         alignItems: 'center',
-        marginRight: 18,
+        marginRight: scale(18),
         position: 'relative',
     },
     activeCategoryItem: {
         backgroundColor: '#f0f8ff',
-        padding: 8,
-        borderRadius: 12,
+        padding: moderateScale(8),
+        borderRadius: moderateScale(12),
     },
     categoryImage: {
-        width: 55,
-        height: 55,
-        borderRadius: 27.5,
+        width: moderateScale(55),
+        height: moderateScale(55),
+        borderRadius: moderateScale(27.5),
     },
     categoryLabel: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         textAlign: 'center',
-        marginTop: 6,
-        width: 70,
+        marginTop: verticalScale(6),
+        width: scale(70),
         color: '#666',
     },
     activeCategoryLabel: {
@@ -439,116 +431,112 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         width: '100%',
-        height: 3,
+        height: verticalScale(3),
         backgroundColor: '#406FF3',
     },
     bannerContainer: {
-        marginBottom: 20,
+        marginBottom: verticalScale(20),
         position: 'relative',
     },
     bannerImage: {
         width: '100%',
-        height: 180,
-        borderRadius: 12,
+        height: verticalScale(180),
+        borderRadius: moderateScale(12),
     },
     liveTag: {
         position: 'absolute',
-        bottom: 10,
-        right: 10,
+        bottom: verticalScale(10),
+        right: scale(10),
         backgroundColor: 'green',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
+        paddingHorizontal: moderateScale(8),
+        paddingVertical: moderateScale(2),
+        borderRadius: moderateScale(4),
     },
     liveText: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
     },
     sectionTitle: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: '600',
-        marginBottom: 12,
+        marginBottom: verticalScale(12),
     },
     dealsRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 15,
+        marginBottom: verticalScale(15),
     },
-
-    trendsrow: {
+    dealsrow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-
     },
-
     dealCard: {
-        width: '30%',
+        width: moderateScale(100),
         backgroundColor: '#f9f9f9',
-        borderRadius: 12,
-        padding: 10,
+        borderRadius: moderateScale(12),
+        padding: moderateScale(10),
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: verticalScale(1) },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 3,
+        shadowRadius: moderateScale(2),
+        elevation: moderateScale(3),
     },
-
     dealImage: {
-        width: 60,
-        height: 60,
-        marginBottom: 8,
+        width: moderateScale(60),
+        height: moderateScale(60),
+        marginBottom: verticalScale(8),
     },
     dealTitle: {
-        fontSize: 14,
-        marginBottom: 4,
+        fontSize: responsiveFontSize(14),
+        marginBottom: verticalScale(4),
     },
     dealPrice: {
         fontWeight: 'bold',
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
     },
     cartBox: {
         position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
+        bottom: verticalScale(0),
+        left: scale(0),
+        right: scale(0),
         backgroundColor: '#007bff',
-        padding: 16,
+        padding: moderateScale(16),
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
+        borderTopLeftRadius: moderateScale(16),
+        borderTopRightRadius: moderateScale(16),
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
+        shadowOffset: { width: 0, height: verticalScale(-2) },
         shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 10,
+        shadowRadius: moderateScale(6),
+        elevation: moderateScale(10),
     },
     cartTitle: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: '600',
     },
     cartSubtitle: {
         color: '#fff',
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
     },
     cartArrow: {
-        fontSize: 22,
+        fontSize: responsiveFontSize(22),
         color: '#fff',
     },
     trendingProductCard: {
-        width: width * 0.4,
+        width: SCREEN_WIDTH * 0.4 - scale(5),
         marginRight: SPACING,
         backgroundColor: '#fff',
-        borderRadius: 8,
-        padding: 10,
+        borderRadius: moderateScale(8),
+        padding: moderateScale(10),
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: verticalScale(1) },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        shadowRadius: moderateScale(2),
+        elevation: moderateScale(2),
     },
     trendingProductImageContainer: {
         position: 'relative',
@@ -556,57 +544,57 @@ const styles = StyleSheet.create({
     },
     trendingProductImage: {
         width: '100%',
-        height: 140,
-        borderRadius: 4,
-        marginBottom: 8,
+        height: verticalScale(140),
+        borderRadius: moderateScale(4),
+        marginBottom: verticalScale(8),
     },
     iconContainer: {
         position: 'absolute',
-        top: 5,
-        right: 5,
+        top: verticalScale(5),
+        right: scale(5),
         flexDirection: 'column',
         alignItems: 'center',
     },
     icon: {
-        width: 24,
-        height: 24,
-        marginBottom: 5,
+        width: moderateScale(24),
+        height: moderateScale(24),
+        marginBottom: verticalScale(5),
         tintColor: '#000',
     },
     trendingProductTitle: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         fontWeight: 'bold',
-        marginBottom: 4,
+        marginBottom: verticalScale(4),
     },
     trendingProductDescription: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#666',
-        marginBottom: 4,
+        marginBottom: verticalScale(4),
     },
     trendingProductPrice: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         fontWeight: 'bold',
         color: '#000',
-        marginBottom: 8,
+        marginBottom: verticalScale(8),
     },
     ratingRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: verticalScale(8),
     },
     starIcon: {
-        width: 12,
-        height: 12,
-        marginRight: 4,
+        width: moderateScale(12),
+        height: moderateScale(12),
+        marginRight: scale(4),
         tintColor: '#ffc107',
     },
     trendingProductRating: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#000',
-        marginRight: 4,
+        marginRight: scale(4),
     },
     trendingProductReviews: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#666',
     },
     buttonRow: {
@@ -616,41 +604,41 @@ const styles = StyleSheet.create({
     },
     buyNowButton: {
         backgroundColor: '#007bff',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 4,
+        paddingVertical: verticalScale(8),
+        paddingHorizontal: moderateScale(12),
+        borderRadius: moderateScale(4),
         flex: 1,
-        marginRight: 8,
+        marginRight: scale(8),
         alignItems: 'center',
     },
     buyNowButtonText: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
     },
     addToCartButton: {
-        padding: 8,
-        borderRadius: 4,
+        padding: moderateScale(8),
+        borderRadius: moderateScale(4),
     },
     addToCartIcon: {
-        width: 20,
-        height: 20,
+        width: moderateScale(20),
+        height: moderateScale(20),
         tintColor: '#000000',
     },
     tabsContainer: {
-        marginBottom: 20,
+        marginBottom: verticalScale(20),
     },
     tabItem: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 20,
-        marginRight: 10,
+        paddingVertical: verticalScale(8),
+        paddingHorizontal: moderateScale(16),
+        borderRadius: moderateScale(20),
+        marginRight: scale(10),
         backgroundColor: '#f0f0f0',
     },
     activeTabItem: {
         backgroundColor: '#406FF3',
     },
     tabText: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         color: '#666',
     },
     activeTabText: {
@@ -663,14 +651,9 @@ const styles = StyleSheet.create({
         marginBottom: SPACING,
     },
     allProductCard: {
-        width: (width - SPACING * 3) / 2,
-        borderRadius: 8,
-        padding: 10,
-        // shadowColor: '#000',
-        // shadowOffset: { width: 0, height: 1 },
-        // shadowOpacity: 0.1,
-        // shadowRadius: 2,
-        // elevation: 2,
+        width: (SCREEN_WIDTH - SPACING * 3) / 2,
+        borderRadius: moderateScale(8),
+        padding: moderateScale(10),
     },
     unavailableProductCard: {
         backgroundColor: '#f9f9f9',
@@ -683,21 +666,21 @@ const styles = StyleSheet.create({
     allProductImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 4,
+        borderRadius: moderateScale(4),
     },
     unavailableProductImage: {
         opacity: 0.5,
     },
     allProductIconContainer: {
         position: 'absolute',
-        top: 5,
-        right: 5,
+        top: verticalScale(5),
+        right: scale(5),
         flexDirection: 'column',
         alignItems: 'center',
     },
     iconBackground: {
-        padding: 4,
-        marginBottom: 2,
+        padding: moderateScale(4),
+        marginBottom: verticalScale(2),
     },
     heartIcon: {
         tintColor: '#406FF3',
@@ -706,29 +689,29 @@ const styles = StyleSheet.create({
         tintColor: '#406FF3',
     },
     allProductTitle: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         fontWeight: 'bold',
-        marginTop: 8,
-        marginBottom: 4,
+        marginTop: verticalScale(8),
+        marginBottom: verticalScale(4),
     },
     allProductDescription: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#666',
-        marginBottom: 4,
+        marginBottom: verticalScale(4),
     },
     allProductPrice: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         fontWeight: 'bold',
         color: '#000',
-        marginBottom: 8,
+        marginBottom: verticalScale(8),
     },
     allProductRating: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#000',
-        marginRight: 4,
+        marginRight: scale(4),
     },
     allProductReviews: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#666',
     },
     unavailableOverlay: {
@@ -740,16 +723,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(255,255,255,0.8)',
-        borderRadius: 8,
+        borderRadius: moderateScale(8),
+        padding: moderateScale(5),
     },
     unavailableTextOverlay: {
         textAlign: 'center',
         color: '#666',
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
     },
     unavailableText: {
         color: '#999',
-    }
+    },
 });
-
-export default ClothingShoesJewelry;

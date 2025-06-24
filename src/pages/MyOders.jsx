@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,24 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Dimensions,
+  PixelRatio,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const guidelineBaseWidth = 375;
+const guidelineBaseHeight = 667;
+
+const scale = size => (SCREEN_WIDTH / guidelineBaseWidth) * size;
+const verticalScale = size => (SCREEN_HEIGHT / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
+
+const responsiveFontSize = (size) => {
+    const newSize = moderateScale(size, 0.5);
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+};
 
 const OrderItem = ({ order, renderStars, onViewOrder }) => (
   <View style={styles.orderItem}>
@@ -27,7 +43,7 @@ const OrderItem = ({ order, renderStars, onViewOrder }) => (
     </View>
     <View style={styles.orderDetails}>
       <Image
-        source={{ uri: 'https://t4.ftcdn.net/jpg/01/43/42/83/360_F_143428338_gcxw3Jcd0tJpkvvb53pfEztwtU9sxsgT.jpg' }}
+        source={{ uri: order.image || 'https://t4.ftcdn.net/jpg/01/43/42/83/360_F_143428338_gcxw3Jcd0tJpkvvb53pfEztwtU9sxsgT.jpg' }}
         style={styles.productImage}
         resizeMode="contain"
       />
@@ -35,7 +51,7 @@ const OrderItem = ({ order, renderStars, onViewOrder }) => (
         <Text style={styles.orderId}>Order ID- {order.orderId}</Text>
         <Text style={styles.productName}>{order.productName}</Text>
         <Text style={styles.productBrand}>{order.brand}</Text>
-        <Text style={styles.productBrand}>{order.totalAmount}</Text>
+        <Text style={styles.productAmount}>₹{parseFloat(order.totalAmount).toFixed(2)}</Text>
         {order.status !== 'cancelled' && (
           <>
             <Text style={styles.rateText}>Rate This Product Now</Text>
@@ -68,7 +84,6 @@ export default function MyOrders() {
       setLoading(true);
       setError(null);
 
-      // map tab to status
       let status = '';
       if (tab === 'Active') status = '';
       else if (tab === 'Completed') status = 'delivered';
@@ -90,7 +105,6 @@ export default function MyOrders() {
 
       setOrders(data.orders || []);
     } catch (error) {
-      console.error('Error fetching orders:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -117,7 +131,7 @@ export default function MyOrders() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Image source={require('../assets/images/arrowbtn.png')} style={styles.backIcon} />
@@ -143,7 +157,7 @@ export default function MyOrders() {
         {loading ? (
           <ActivityIndicator size="large" color="#007BFF" style={styles.loader} />
         ) : error ? (
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorText}>Error: {error}</Text>
         ) : orders.length === 0 ? (
           <Text style={styles.emptyText}>No orders found</Text>
         ) : (
@@ -155,9 +169,10 @@ export default function MyOrders() {
                 productName: order.products[0]?.productName || 'Product Name',
                 brand: order.products[0]?.productBrand || 'Brand',
                 image: order.products[0]?.image || null,
-                date: new Date(order.createdAt).toLocaleDateString(),
+                date: new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric'}),
                 orderId: order._id,
                 rating: order.rating || 0,
+                totalAmount: order.totalAmount || 0,
               }}
               renderStars={renderStars}
               onViewOrder={handleViewOrder}
@@ -165,76 +180,87 @@ export default function MyOrders() {
           ))
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f8f8', paddingTop: 40 },
+  container: { flex: 1, backgroundColor: '#f8f8f8', paddingTop: verticalScale(40) },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
+    paddingHorizontal: scale(15),
+    paddingBottom: verticalScale(10),
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#eee',
   },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 10 },
+  headerTitle: { fontSize: responsiveFontSize(18), fontWeight: 'bold', marginLeft: scale(10) },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 25,
-    marginHorizontal: 15,
-    marginVertical: 10,
-    paddingHorizontal: 10,
+    borderRadius: moderateScale(25),
+    marginHorizontal: scale(15),
+    marginVertical: verticalScale(10),
+    paddingHorizontal: scale(10),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: verticalScale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: moderateScale(2),
+    elevation: moderateScale(2),
   },
-  searchIcon: { marginRight: 10, width: 20, height: 20 },
-  searchInput: { flex: 1, fontSize: 16, paddingVertical: 10 },
-  microIcon: { width: 20, height: 24 },
+  searchIcon: { marginRight: scale(10), width: moderateScale(20), height: moderateScale(20) },
+  searchInput: { flex: 1, fontSize: responsiveFontSize(16), paddingVertical: verticalScale(10) },
+  microIcon: { width: moderateScale(20), height: moderateScale(24) },
   tabsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginVertical: 10,
-    borderBottomWidth: 1,
+    marginVertical: verticalScale(10),
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#eee',
   },
-  tab: { fontSize: 16, paddingVertical: 10, paddingHorizontal: 20, color: '#888' },
-  activeTab: { color: '#007BFF', borderBottomWidth: 2, borderBottomColor: '#007BFF' },
-  orderList: { flex: 1, paddingHorizontal: 15 },
-  loader: { marginTop: 20 },
-  errorText: { color: 'red', textAlign: 'center', marginTop: 20 },
-  emptyText: { textAlign: 'center', marginTop: 20, color: '#888' },
-  orderItem: { backgroundColor: '#fff', borderRadius: 10, marginVertical: 5, padding: 15 },
-  orderHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  orderStatus: { fontSize: 14, fontWeight: 'bold', color: 'green' },
+  tab: { fontSize: responsiveFontSize(16), paddingVertical: verticalScale(10), paddingHorizontal: scale(20), color: '#888' },
+  activeTab: { color: '#007BFF', borderBottomWidth: moderateScale(2), borderBottomColor: '#007BFF' },
+  orderList: { flex: 1, paddingHorizontal: scale(15) },
+  loader: { marginTop: verticalScale(20) },
+  errorText: { color: 'red', textAlign: 'center', marginTop: verticalScale(20), fontSize: responsiveFontSize(14) },
+  emptyText: { textAlign: 'center', marginTop: verticalScale(20), color: '#888', fontSize: responsiveFontSize(14) },
+  orderItem: {
+    backgroundColor: '#fff',
+    borderRadius: moderateScale(10),
+    marginVertical: verticalScale(5),
+    padding: moderateScale(15),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: verticalScale(1) },
+    shadowOpacity: 0.05,
+    shadowRadius: moderateScale(1),
+    elevation: moderateScale(1),
+  },
+  orderHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: verticalScale(10) },
+  orderStatus: { fontSize: responsiveFontSize(14), fontWeight: 'bold', color: 'green' },
   cancelledStatus: { color: 'red' },
   pendingStatus: { color: '#FFA500' },
   processingStatus: { color: '#007BFF' },
   deliveredStatus: { color: 'green' },
-  orderDate: { fontSize: 14, color: '#888' },
+  orderDate: { fontSize: responsiveFontSize(14), color: '#888' },
   orderDetails: { flexDirection: 'row' },
-  productImage: { width: 138.73, height: 109, borderRadius: 5, marginRight: 10 },
+  productImage: { width: moderateScale(138.73), height: moderateScale(109), borderRadius: moderateScale(5), marginRight: scale(10) },
   productInfo: { flex: 1 },
-  orderId: { fontSize: 14, color: '#555', marginBottom: 5 },
-  productName: { fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
-  productBrand: { fontSize: 14, color: '#888', marginBottom: 5 },
-  rateText: { fontSize: 14, color: '#555', marginBottom: 5 },
+  orderId: { fontSize: responsiveFontSize(14), color: '#555', marginBottom: verticalScale(5) },
+  productName: { fontSize: responsiveFontSize(16), fontWeight: 'bold', marginBottom: verticalScale(5) },
+  productBrand: { fontSize: responsiveFontSize(14), color: '#888', marginBottom: verticalScale(5) },
+  productAmount: { fontSize: responsiveFontSize(14), fontWeight: 'bold', color: '#333', marginBottom: verticalScale(5) },
+  rateText: { fontSize: responsiveFontSize(14), color: '#555', marginBottom: verticalScale(5) },
   viewOrderButton: {
-    marginTop: 10,
+    marginTop: verticalScale(10),
     borderColor: '#007BFF',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    borderWidth: moderateScale(1),
+    borderRadius: moderateScale(5),
+    paddingVertical: verticalScale(5),
+    paddingHorizontal: scale(10),
     alignSelf: 'flex-start',
   },
-  viewOrderButtonText: { color: '#007BFF', fontSize: 14 },
-  backIcon: { width: 24, height: 20 },
-  starIcon: { width: 15, height: 15, marginRight: 2 },
+  viewOrderButtonText: { color: '#007BFF', fontSize: responsiveFontSize(14) },
+  backIcon: { width: moderateScale(24), height: moderateScale(20) },
+  starIcon: { width: moderateScale(15), height: moderateScale(15), marginRight: scale(2) },
 });

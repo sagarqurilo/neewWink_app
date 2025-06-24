@@ -22,6 +22,12 @@ const OrderSuccess = ({ route, navigation }) => {
             <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
                 <Text style={styles.buttonText}>Continue Shopping</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+  style={{ backgroundColor: '#406FF3', padding: 15, borderRadius: 8, marginTop: 20 }}
+  onPress={() => navigation.navigate('MapScreen', {deliveryBoyId: '6852ac0eeea38982fc8f8c01'})}
+>
+  <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>Track Delivery</Text>
+</TouchableOpacity>
         </View>
     );
 };

@@ -1,6 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Alert,
+  Dimensions,
+  PixelRatio,
+  SafeAreaView,
+} from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const guidelineBaseWidth = 375;
+const guidelineBaseHeight = 667;
+
+const scale = size => (SCREEN_WIDTH / guidelineBaseWidth) * size;
+const verticalScale = size => (SCREEN_HEIGHT / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
+const responsiveFontSize = (size) => {
+    const newSize = moderateScale(size, 0.5);
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+};
 
 const EditProfile = () => {
     const navigation = useNavigation();
@@ -15,16 +39,14 @@ const EditProfile = () => {
 
     const handleUpdateProfile = async () => {
         if (!firstName || !lastName || !contact) {
-            Alert.alert('Missing Required Fields', 'Please fill all required fields (*).');
+            Alert.alert('Missing Fields', 'Please fill all required fields (*).');
             return;
         }
-
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (email && !emailRegex.test(email)) {
-            Alert.alert('Invalid Email Format', 'Please enter a valid email address.');
+            Alert.alert('Invalid Email', 'Please enter a valid email address.');
             return;
         }
-
         const updatedData = {
             name: firstName.trim()+" "+lastName.trim(),
             contact: contact,
@@ -32,7 +54,6 @@ const EditProfile = () => {
             gender: gender,
             dob: dob,
         };
-
         try {
             const response = await fetch('https://qdp1vbhp-2000.inc1.devtunnels.ms/api/auth/updateUser', {
                 method: 'PUT',
@@ -42,30 +63,24 @@ const EditProfile = () => {
                 },
                 body: JSON.stringify(updatedData),
             });
-
             const json = await response.json();
-
             if (response.ok) {
                 Alert.alert('Success', 'Profile updated successfully!');
-                console.log('Response:', json);
-
                 const onProfileUpdate = route.params?.onProfileUpdate;
                 if (onProfileUpdate) {
                     onProfileUpdate(updatedData);
                 }
-
                 navigation.goBack();
             } else {
                 Alert.alert('Error', json.message || 'Failed to update profile.');
             }
         } catch (error) {
-            console.error('API Error:', error);
             Alert.alert('Error', 'Something went wrong while updating profile.');
         }
     };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={styles.backArrow}>←</Text>
@@ -77,55 +92,33 @@ const EditProfile = () => {
                 <View style={styles.profileImageContainer}>
                     <Image source={require('../assets/images/headerimg.png')} style={styles.profileImage} />
                     <TouchableOpacity style={styles.cameraIcon}>
-                        <Text style={{ color: '#fff' }}>📷</Text>
+                        <Text style={styles.cameraIconText}>📷</Text>
                     </TouchableOpacity>
                 </View>
                 <Text style={styles.profileName}>Itunuoluwa Abidoye</Text>
                 <Text style={styles.profileEmail}>itsdesign@gmail.com</Text>
             </View>
 
-            <ScrollView style={styles.formSection}>
+            <ScrollView style={styles.formSection} showsVerticalScrollIndicator={false}>
                 <View style={styles.nameInputs}>
                     <View style={styles.inputContainerHalf}>
                         <Text style={styles.label}>First Name <Text style={{ color: 'red' }}>*</Text></Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Name"
-                            value={firstName}
-                            onChangeText={setFirstName}
-                        />
+                        <TextInput style={styles.input} placeholder="Name" value={firstName} onChangeText={setFirstName} />
                     </View>
                     <View style={styles.inputContainerHalf}>
                         <Text style={styles.label}>Last Name <Text style={{ color: 'red' }}>*</Text></Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Name"
-                            value={lastName}
-                            onChangeText={setLastName}
-                        />
+                        <TextInput style={styles.input} placeholder="Name" value={lastName} onChangeText={setLastName} />
                     </View>
                 </View>
 
                 <View style={styles.inputContainerFull}>
                     <Text style={styles.label}>Contact <Text style={{ color: 'red' }}>*</Text></Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="9895712689"
-                        value={contact}
-                        onChangeText={setContact}
-                        keyboardType="phone-pad"
-                    />
+                    <TextInput style={styles.input} placeholder="9895712689" value={contact} onChangeText={setContact} keyboardType="phone-pad" />
                 </View>
 
                 <View style={styles.inputContainerFull}>
                     <Text style={styles.label}>Email</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="xyz123@gmail.com"
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                    />
+                    <TextInput style={styles.input} placeholder="xyz123@gmail.com" value={email} onChangeText={setEmail} keyboardType="email-address" />
                 </View>
 
                 <View style={styles.genderSection}>
@@ -148,153 +141,159 @@ const EditProfile = () => {
 
                 <View style={styles.inputContainerFull}>
                     <Text style={styles.label}>DOB</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="06-12-2003"
-                        value={dob}
-                        onChangeText={setDob}
-                    />
+                    <TextInput style={styles.input} placeholder="DD-MM-YYYY" value={dob} onChangeText={setDob} />
                 </View>
 
                 <TouchableOpacity style={styles.updateButton} onPress={handleUpdateProfile}>
                     <Text style={styles.updateButtonText}>Update Profile</Text>
                 </TouchableOpacity>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 };
+
+export default EditProfile;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f8f8',
-        paddingTop: 40,
+        paddingTop: verticalScale(20),
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingBottom: 10,
-        borderBottomWidth: 1,
+        paddingHorizontal: moderateScale(15),
+        paddingBottom: verticalScale(10),
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#eee',
     },
     backArrow: {
-        fontSize: 24,
-        marginRight: 10,
+        fontSize: responsiveFontSize(24),
+        marginRight: scale(10),
+        color: '#000',
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: responsiveFontSize(18),
         fontWeight: 'bold',
+        color: '#000',
     },
     profileSection: {
         alignItems: 'center',
-        padding: 20,
+        padding: moderateScale(20),
         backgroundColor: '#fff',
-        marginBottom: 15,
+        marginBottom: verticalScale(15),
     },
     profileImageContainer: {
         position: 'relative',
     },
     profileImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        marginBottom: 10,
+        width: moderateScale(100),
+        height: moderateScale(100),
+        borderRadius: moderateScale(50),
+        marginBottom: verticalScale(10),
     },
     cameraIcon: {
         position: 'absolute',
-        bottom: 15,
-        right: 5,
+        bottom: verticalScale(15),
+        right: scale(5),
         backgroundColor: '#007BFF',
-        borderRadius: 15,
-        padding: 5,
+        borderRadius: moderateScale(15),
+        padding: moderateScale(5),
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cameraIconText: {
+        fontSize: responsiveFontSize(14),
+        color: '#fff',
     },
     profileName: {
-        fontSize: 18,
+        fontSize: responsiveFontSize(18),
         fontWeight: 'bold',
-        marginBottom: 2,
+        marginBottom: verticalScale(2),
+        color: '#000',
     },
     profileEmail: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         color: '#888',
     },
     formSection: {
         flex: 1,
-        paddingHorizontal: 15,
+        paddingHorizontal: moderateScale(15),
+        paddingBottom: verticalScale(20),
     },
     nameInputs: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 15,
+        marginBottom: verticalScale(15),
     },
     inputContainerHalf: {
-        width: '48%',
+        width: moderateScale(155),
     },
     inputContainerFull: {
-        marginBottom: 15,
+        marginBottom: verticalScale(15),
     },
     label: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         color: '#333',
-        marginBottom: 5,
+        marginBottom: verticalScale(5),
         fontWeight: 'bold',
     },
     input: {
-        borderWidth: 1,
+        borderWidth: moderateScale(1),
         borderColor: '#ccc',
-        borderRadius: 5,
-        padding: 10,
-        fontSize: 14,
+        borderRadius: moderateScale(5),
+        padding: moderateScale(10),
+        fontSize: responsiveFontSize(14),
         backgroundColor: '#fff',
+        height: verticalScale(45),
     },
     genderSection: {
-        marginBottom: 15,
+        marginBottom: verticalScale(15),
     },
     radioContainer: {
         flexDirection: 'row',
-        marginTop: 5,
+        marginTop: verticalScale(5),
     },
     radioOption: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 20,
+        marginRight: scale(20),
     },
     radioCircle: {
-        height: 20,
-        width: 20,
-        borderRadius: 10,
-        borderWidth: 1,
+        height: moderateScale(20),
+        width: moderateScale(20),
+        borderRadius: moderateScale(10),
+        borderWidth: moderateScale(1),
         borderColor: '#ccc',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 5,
+        marginRight: scale(5),
     },
     radioSelected: {
         borderColor: '#007BFF',
     },
     radioInner: {
-        height: 12,
-        width: 12,
-        borderRadius: 6,
+        height: moderateScale(12),
+        width: moderateScale(12),
+        borderRadius: moderateScale(6),
         backgroundColor: '#007BFF',
     },
     radioLabel: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         color: '#333',
     },
     updateButton: {
         backgroundColor: '#007BFF',
-        padding: 15,
-        borderRadius: 5,
+        padding: moderateScale(15),
+        borderRadius: moderateScale(5),
         alignItems: 'center',
-        marginTop: 20,
-        marginBottom: 20,
+        marginTop: verticalScale(20),
+        marginBottom: verticalScale(20),
     },
     updateButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: 'bold',
     }
 });
-
-export default EditProfile;

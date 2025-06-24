@@ -9,15 +9,29 @@ import {
     FlatList,
     Dimensions,
     ActivityIndicator,
-    Alert
+    Alert,
+    PixelRatio,
+    SafeAreaView,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const { width } = Dimensions.get('window');
-const recommendedItemWidth = (width - 40) / 2;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const guidelineBaseWidth = 375;
+const guidelineBaseHeight = 667;
 
-const CartItem = ({ item, onRemove, onUpdateQuantity }) => {
+const scale = size => (SCREEN_WIDTH / guidelineBaseWidth) * size;
+const verticalScale = size => (SCREEN_HEIGHT / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
 
+const responsiveFontSize = (size) => {
+    const newSize = moderateScale(size, 0.5);
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+};
+
+const recommendedItemWidth = moderateScale(160);
+
+const CartItem = ({ item, onRemove, onUpdateQuantity, onPress }) => {
     const productName = item.product?.name || 'Product Name';
     const brandName = item.product?.brand || 'No Brand';
     const variantPrice = item.selectedVariant?.price;
@@ -29,13 +43,12 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }) => {
         : 0;
 
     return (
-        <View style={styles.cartItemContainer}>
+        <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.cartItemContainer}>
             <Image source={{ uri: itemImage }} style={styles.cartItemImage} resizeMode="contain" />
             <View style={styles.cartItemDetails}>
                 <Text style={styles.cartItemName}>{productName}</Text>
                 <Text style={styles.cartItemBrand}>{brandName}</Text>
                 <View style={styles.cartItemRating}>
-                    {/* Star icons are still placeholders */}
                     <Image source={require('../assets/images/starlogo.png')} style={[styles.smallIcon, { tintColor: '#FFD700' }]} />
                     <Image source={require('../assets/images/starlogo.png')} style={[styles.smallIcon, { tintColor: '#FFD700' }]} />
                     <Image source={require('../assets/images/starlogo.png')} style={[styles.smallIcon, { tintColor: '#FFD700' }]} />
@@ -64,12 +77,11 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }) => {
             <TouchableOpacity onPress={() => onRemove(item._id)} style={styles.removeButton}>
                 <Image source={require('../assets/images/delete.png')} style={styles.deleteIcon} />
             </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
     );
 };
 
-const RecommendedItem = ({ item }) => {
-    // Extract data from the API response structure
+const RecommendedItem = ({ item, onPress }) => {
     const productName = item.name || 'Product Name';
     const brandName = item.brand || 'No Brand';
     const productImage = item.variants?.[0]?.images?.[0] || 'https://placehold.co/160x120/E0E0E0/333333?text=No+Image';
@@ -81,7 +93,7 @@ const RecommendedItem = ({ item }) => {
         : 0;
 
     return (
-        <View style={styles.recommendedItemContainer}>
+        <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.recommendedItemContainer}>
             <Image source={{ uri: productImage }} style={styles.recommendedItemImage} resizeMode="contain" />
             <Text style={styles.recommendedItemName}>{productName}</Text>
             <Text style={styles.recommendedItemBrand}>{brandName}</Text>
@@ -99,7 +111,7 @@ const RecommendedItem = ({ item }) => {
                 <Text style={styles.recommendedItemRatingText}>4.5</Text>
                 <Text style={styles.recommendedItemReviewText}>Reviews</Text>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
@@ -115,29 +127,22 @@ function MyCart({ navigation, route }) {
     const TRENDING_API_URL = 'https://qdp1vbhp-2000.inc1.devtunnels.ms/api/product/trending';
     const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NTJhZTY5N2RhZDEyZmM2N2Q5ZDVmYyIsInBob25lIjoiNzk4MjkwMDc3MCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzUwMjQ5MDc3LCJleHAiOjE3NTA4NTM4Nzd9.SBpXqkVhAyLYnb2F8sSsjudsA7Q_mPdTdgUSf5jcZ94';
 
-    // Function to fetch trending products
     const fetchTrendingProducts = async () => {
         setTrendingLoading(true);
         setTrendingError(null);
         try {
             const response = await fetch(TRENDING_API_URL, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
             });
             const data = await response.json();
-            console.log("Trending Products API Response:", data);
-
             if (response.ok && data.success) {
                 setTrendingProducts(data.products || []);
             } else {
-                console.error('Failed to fetch trending products:', data.message);
                 setTrendingError(data.message || 'Failed to fetch trending products');
                 setTrendingProducts([]);
             }
         } catch (err) {
-            console.error("Error fetching trending products:", err);
             setTrendingError('Network error or unable to connect to server');
             setTrendingProducts([]);
         } finally {
@@ -145,27 +150,20 @@ function MyCart({ navigation, route }) {
         }
     };
 
-    // Function to fetch cart items
     const fetchCartItems = async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${CART_API_BASE_URL}user`, { // Fetch all user cart items
+            const response = await fetch(`${CART_API_BASE_URL}user`, {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${TOKEN}`
-                },
+                headers: { 'Authorization': `Bearer ${TOKEN}` },
             });
             const data = await response.json();
-            console.log("API Response Data (fetchCartItems):", data);
-
             if (response.ok) {
                 let itemsToSet = data;
                 if (data && typeof data === 'object' && Array.isArray(data.cartItems)) {
                     itemsToSet = data.cartItems;
                 } else if (!Array.isArray(data)) {
-
-                    console.warn("API returned non-array data, attempting to interpret as single cart or empty:", data);
                     itemsToSet = [];
                 }
                 setCartItems(itemsToSet);
@@ -173,7 +171,6 @@ function MyCart({ navigation, route }) {
                 setError(data.message || `Failed to fetch cart items (Status: ${response.status})`);
             }
         } catch (err) {
-            console.error("Error fetching cart items:", err);
             setError('Network error or no connection to server. Please check your device\'s internet connection or the server status.');
         } finally {
             setLoading(false);
@@ -183,31 +180,21 @@ function MyCart({ navigation, route }) {
     const handleRemoveItem = async (itemId) => {
         const originalCartItems = cartItems
         setCartItems(cartItems.filter(item => item._id !== itemId));
-
         try {
-            const response = await fetch(`${CART_API_BASE_URL}${itemId}`, { // DELETE endpoint with item ID
+            const response = await fetch(`${CART_API_BASE_URL}${itemId}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${TOKEN}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
             });
-
             const data = await response.json();
-            console.log("API Response Data (handleRemoveItem):", data);
-
             if (response.ok) {
                 Alert.alert('Success', data.message || 'Item removed from cart.');
-
             } else {
                 setCartItems(originalCartItems);
                 Alert.alert('Error', data.message || 'Failed to remove item from cart.');
-                console.error(`Failed to delete item ${itemId}:`, data.message);
             }
         } catch (err) {
             setCartItems(originalCartItems);
             Alert.alert('Error', 'Network error or unable to connect to server. Please try again.');
-            console.error("Error removing cart item:", err);
         }
     };
 
@@ -216,38 +203,21 @@ function MyCart({ navigation, route }) {
             Alert.alert(
                 "Remove Item?",
                 "Do you want to remove this item from your cart?",
-                [
-                    {
-                        text: "Cancel",
-                        style: "cancel"
-                    },
-                    {
-                        text: "Remove",
-                        onPress: () => handleRemoveItem(itemId)
-                    }
-                ]
+                [{ text: "Cancel", style: "cancel" }, { text: "Remove", onPress: () => handleRemoveItem(itemId) }]
             );
             return;
         }
-
         const originalCartItems = cartItems;
         setCartItems(cartItems.map(item =>
             item._id === itemId ? { ...item, quantity: newQuantity } : item
         ));
-
         try {
-            const response = await fetch(`${CART_API_BASE_URL}${itemId}`, { // Assuming an update endpoint like /api/addtocart/update/:id
+            const response = await fetch(`${CART_API_BASE_URL}${itemId}`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${TOKEN}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ quantity: newQuantity }),
             });
-
             const data = await response.json();
-            console.log("API Response Data (handleUpdateQuantity):", data);
-
             if (!response.ok) {
                 setCartItems(originalCartItems);
                 Alert.alert('Error', data.message || 'Failed to update quantity.');
@@ -255,20 +225,15 @@ function MyCart({ navigation, route }) {
         } catch (err) {
             setCartItems(originalCartItems);
             Alert.alert('Error', 'Network error or unable to connect to server. Could not update quantity.');
-            console.error("Error updating quantity:", err);
         }
     };
-
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             fetchCartItems();
-            fetchTrendingProducts(); // Fetch trending products when screen focuses
+            fetchTrendingProducts();
         });
-
-        // Initial fetch when component mounts
         fetchTrendingProducts();
-
         return unsubscribe;
     }, [navigation]);
 
@@ -278,8 +243,6 @@ function MyCart({ navigation, route }) {
         const originalPrice = item.selectedVariant?.originalPrice || price;
         return sum + (originalPrice - price) * item.quantity;
     }, 0);
-
-
 
     if (loading) {
         return (
@@ -302,19 +265,14 @@ function MyCart({ navigation, route }) {
     }
 
     return (
-        <View style={styles.container}>
-            {/* Header */}
+        <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={styles.headerIconLeft}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                    <Image source={require('../assets/images/arrowbtn.png')} style={styles.headerIcon} />
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIconLeft} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
                 </TouchableOpacity>
                 <View style={styles.headerTitleContainer}>
                     <Text style={styles.headerTitle}>My Cart</Text>
-                    <Text style={styles.headerSubtitle}>{cartItems.length} Item(s) valued at ₹{totalAmount}</Text>
+                    <Text style={styles.headerSubtitle}>{cartItems.length} Item(s) valued at ₹{totalAmount.toFixed(2)}</Text>
                 </View>
                 <View style={styles.headerRight}>
                     <TouchableOpacity style={styles.headerIconRight}>
@@ -326,16 +284,14 @@ function MyCart({ navigation, route }) {
                 </View>
             </View>
 
-            {/* Delivery Location */}
             <View style={styles.deliveryContainer}>
                 <Image source={require('../assets/images/location.png')} style={styles.locationIcon} />
                 <Text style={styles.deliveryText}>Deliver to - Delhi NCR , 110015</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('AddressBook')}>
+                <TouchableOpacity onPress={() => navigation.navigate('AddressBook', { cartItems, totalAmount })}>
                     <Text style={styles.changeButtonText}>Change</Text>
                 </TouchableOpacity>
             </View>
 
-            {/* Cart Items List */}
             <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
                 {cartItems.length === 0 ? (
                     <View style={styles.emptyCartContainer}>
@@ -354,6 +310,7 @@ function MyCart({ navigation, route }) {
                                 item={item}
                                 onRemove={handleRemoveItem}
                                 onUpdateQuantity={handleUpdateQuantity}
+                                onPress={() => navigation.navigate('ViewProducts', { productId: item.product._id })}
                             />
                         )}
                         ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
@@ -361,12 +318,7 @@ function MyCart({ navigation, route }) {
                     />
                 )}
 
-
-                {/* Recommended Products */}
                 <Text style={styles.recommendedTitle}>Recommended Products</Text>
-                <TouchableOpacity style={styles.viewAllButton}>
-                    {/* <Text style={styles.viewAllButtonText}>View All</Text> */}
-                </TouchableOpacity>
 
                 {trendingLoading ? (
                     <View style={styles.trendingLoadingContainer}>
@@ -393,40 +345,41 @@ function MyCart({ navigation, route }) {
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         keyExtractor={(item) => item._id}
-                        renderItem={({ item }) => <RecommendedItem item={item} />}
+                        renderItem={({ item }) => (
+                            <RecommendedItem
+                                item={item}
+                                onPress={() => navigation.navigate('ViewProducts', { productId: item._id })}
+                            />
+                        )}
                         contentContainerStyle={styles.recommendedList}
                     />
                 )}
             </ScrollView>
 
-            {/* Footer Total and Proceed */}
             {cartItems.length > 0 && (
                 <View style={styles.footer}>
                     <View>
-                        <Text style={styles.totalAmount}>₹{totalAmount}</Text>
-                        <Text style={styles.totalSaved}>You saved ₹{totalSaved}</Text>
+                        <Text style={styles.totalAmount}>₹{totalAmount.toFixed(2)}</Text>
+                        <Text style={styles.totalSaved}>You saved ₹{totalSaved.toFixed(2)}</Text>
                     </View>
                     <TouchableOpacity style={styles.proceedButton} onPress={() => {
-                        // Navigate to payment screen with cart data
-                        navigation.navigate('PaymentScreen', {
-                            cartItems: cartItems,
-                            totalAmount: totalAmount,
-                            selectedAddress: null // You can pass selected address if available
-                        });
+                        navigation.navigate('PaymentScreen', { cartItems: cartItems, totalAmount: totalAmount, selectedAddress: null });
                     }}>
                         <Text style={styles.proceedButtonText}>Proceed</Text>
                     </TouchableOpacity>
                 </View>
             )}
-        </View>
+        </SafeAreaView>
     );
 }
+
+export default MyCart;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        marginTop: 30
+        paddingTop: verticalScale(30),
     },
     loadingContainer: {
         flex: 1,
@@ -435,8 +388,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     loadingText: {
-        marginTop: 10,
-        fontSize: 16,
+        marginTop: verticalScale(10),
+        fontSize: responsiveFontSize(16),
         color: '#666',
     },
     errorContainer: {
@@ -444,55 +397,54 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#fff',
-        padding: 20,
+        padding: moderateScale(20),
     },
     errorText: {
         color: 'red',
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: verticalScale(20),
     },
     retryButton: {
         backgroundColor: '#406FF3',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 5,
+        paddingHorizontal: scale(20),
+        paddingVertical: verticalScale(10),
+        borderRadius: moderateScale(5),
     },
     retryButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: 'bold',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
-        borderBottomWidth: 1,
+        padding: moderateScale(12),
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#eee',
         justifyContent: 'space-between',
-
     },
     headerIconLeft: {
-        marginRight: 13,
+        marginRight: scale(13),
     },
     headerIconRight: {
-        marginLeft: 15,
+        marginLeft: scale(15),
     },
     headerIcon: {
-        width: 24,
-        height: 24,
+        width: moderateScale(24),
+        height: moderateScale(24),
         resizeMode: 'contain',
     },
     headerTitleContainer: {
         flex: 1,
-        marginLeft: 10,
+        marginLeft: scale(10),
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: responsiveFontSize(18),
         fontWeight: 'bold',
     },
     headerSubtitle: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#666',
     },
     headerRight: {
@@ -503,189 +455,189 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#e0eaff',
-        padding: 15,
+        padding: moderateScale(15),
         justifyContent: 'space-between',
     },
     locationIcon: {
-        width: 20,
-        height: 20,
+        width: moderateScale(20),
+        height: moderateScale(20),
         resizeMode: 'contain',
-        marginRight: 5,
+        marginRight: scale(5),
     },
     deliveryText: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         color: '#000',
         flex: 1,
     },
     changeButtonText: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         color: '#000',
         fontWeight: 'bold',
     },
     scrollViewContent: {
-        paddingBottom: 120, // Space for the footer
+        paddingBottom: verticalScale(120),
     },
     cartItemContainer: {
         flexDirection: 'row',
         backgroundColor: '#f9f9f9',
-        borderRadius: 10,
-        padding: 15,
-        marginBottom: 10,
-        marginHorizontal: 15,
+        borderRadius: moderateScale(10),
+        padding: moderateScale(15),
+        marginBottom: verticalScale(10),
+        marginHorizontal: scale(15),
         alignItems: 'center',
     },
     cartItemImage: {
-        width: 160,
-        height: 120,
+        width: moderateScale(160),
+        height: moderateScale(120),
         resizeMode: 'contain',
-        marginRight: 15,
+        marginRight: scale(15),
     },
     cartItemDetails: {
         flex: 1,
     },
     cartItemName: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: 'bold',
     },
     cartItemBrand: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#666',
-        marginBottom: 5,
+        marginBottom: verticalScale(5),
     },
     cartItemRating: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 5,
+        marginBottom: verticalScale(5),
     },
     smallIcon: {
-        width: 15,
-        height: 15,
+        width: moderateScale(15),
+        height: moderateScale(15),
         resizeMode: 'contain',
-        marginRight: 2,
+        marginRight: scale(2),
     },
     cartItemPriceRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: verticalScale(10),
     },
     cartItemPrice: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: 'bold',
         color: '#000',
-        marginRight: 5,
+        marginRight: scale(5),
     },
     cartItemOriginalPrice: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#888',
         textDecorationLine: 'line-through',
-        marginRight: 5,
+        marginRight: scale(5),
     },
     cartItemDiscount: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: 'red',
         fontWeight: 'bold',
     },
     quantityContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1,
+        borderWidth: moderateScale(1),
         borderColor: '#eee',
-        borderRadius: 5,
-        width: 80,
+        borderRadius: moderateScale(5),
+        width: moderateScale(80),
         justifyContent: 'space-between',
     },
     quantityButton: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
+        paddingHorizontal: scale(8),
+        paddingVertical: verticalScale(4),
     },
     quantityButtonText: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: 'bold',
         color: '#000',
     },
     quantityText: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         fontWeight: 'bold',
         color: '#000',
     },
     removeButton: {
-        marginLeft: 15,
-        padding: 5,
+        marginLeft: scale(15),
+        padding: moderateScale(5),
     },
     deleteIcon: {
-        width: 20,
-        height: 20,
+        width: moderateScale(20),
+        height: moderateScale(20),
         resizeMode: 'contain',
         tintColor: '#888',
     },
     recommendedTitle: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: 'bold',
-        marginHorizontal: 15,
-        marginTop: 20,
+        marginHorizontal: scale(15),
+        marginTop: verticalScale(20),
     },
     viewAllButton: {
         position: 'absolute',
-        right: 15,
-        top: 20,
+        right: scale(15),
+        top: verticalScale(20),
     },
     viewAllButtonText: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#000',
         fontWeight: 'bold',
     },
     recommendedList: {
-        paddingHorizontal: 15,
-        marginTop: 10,
+        paddingHorizontal: scale(15),
+        marginTop: verticalScale(10),
     },
     recommendedItemContainer: {
         width: recommendedItemWidth,
         backgroundColor: '#fff',
-        borderRadius: 10,
-        padding: 10,
-        marginRight: 10,
+        borderRadius: moderateScale(10),
+        padding: moderateScale(10),
+        marginRight: scale(10),
         alignItems: 'center',
-        elevation: 2,
+        elevation: moderateScale(2),
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: verticalScale(1) },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowRadius: moderateScale(2),
     },
     recommendedItemImage: {
         width: recommendedItemWidth * 0.8,
         height: recommendedItemWidth * 0.8,
-        marginBottom: 10,
+        marginBottom: verticalScale(10),
     },
     recommendedItemName: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         fontWeight: 'bold',
         textAlign: 'center',
     },
     recommendedItemBrand: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#666',
         textAlign: 'center',
-        marginBottom: 5,
+        marginBottom: verticalScale(5),
     },
     recommendedItemPriceRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 5,
+        marginBottom: verticalScale(5),
     },
     recommendedItemPrice: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         fontWeight: 'bold',
         color: '#000',
-        marginRight: 5,
+        marginRight: scale(5),
     },
     recommendedItemOriginalPrice: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#888',
         textDecorationLine: 'line-through',
-        marginRight: 5,
+        marginRight: scale(5),
     },
     recommendedItemDiscount: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: 'red',
         fontWeight: 'bold',
     },
@@ -694,14 +646,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     recommendedItemRatingText: {
-        fontSize: 10,
-        marginLeft: 2,
+        fontSize: responsiveFontSize(10),
+        marginLeft: scale(2),
         color: '#666',
     },
     recommendedItemReviewText: {
-        fontSize: 10,
+        fontSize: responsiveFontSize(10),
         color: '#666',
-        marginLeft: 5,
+        marginLeft: scale(5),
     },
     footer: {
         position: 'absolute',
@@ -712,110 +664,108 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         backgroundColor: '#fff',
-        borderTopWidth: 1,
+        borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: '#eee',
-        padding: 15,
-        height: 80,
+        padding: moderateScale(15),
+        height: verticalScale(80),
     },
     totalAmount: {
-        fontSize: 20,
+        fontSize: responsiveFontSize(20),
         fontWeight: 'bold',
         color: '#000',
     },
     totalSaved: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: 'green',
         fontWeight: 'bold',
-        marginTop: 2,
+        marginTop: verticalScale(2),
     },
     proceedButton: {
         backgroundColor: '#406FF3',
-        paddingVertical: 12,
-        paddingHorizontal: 30,
-        borderRadius: 5,
+        paddingVertical: verticalScale(12),
+        paddingHorizontal: scale(30),
+        borderRadius: moderateScale(5),
         justifyContent: 'center',
         alignItems: 'center',
     },
     proceedButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: 'bold',
     },
     emptyCartContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 50,
-        padding: 20,
-        backgroundColor: '#fff', // Explicitly set background to ensure visibility
-        minHeight: 200, // Ensure it has some height even if content is small
+        marginTop: verticalScale(50),
+        padding: moderateScale(20),
+        backgroundColor: '#fff',
+        minHeight: verticalScale(200),
     },
     emptyCartImage: {
-        width: 150,
-        height: 150,
+        width: moderateScale(150),
+        height: moderateScale(150),
         resizeMode: 'contain',
-        marginBottom: 20,
-        tintColor: '#ccc', // Make cart light grey
+        marginBottom: verticalScale(20),
+        tintColor: '#ccc',
     },
     emptyCartText: {
-        fontSize: 18,
+        fontSize: responsiveFontSize(18),
         color: '#888',
-        marginBottom: 20,
+        marginBottom: verticalScale(20),
         textAlign: 'center',
     },
     emptyCartButton: {
         backgroundColor: '#406FF3',
-        paddingVertical: 12,
-        paddingHorizontal: 25,
-        borderRadius: 5,
+        paddingVertical: verticalScale(12),
+        paddingHorizontal: scale(25),
+        borderRadius: moderateScale(5),
     },
     emptyCartButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: 'bold',
     },
     itemSeparator: {
-        height: 10, // Adds space between cart items
+        height: verticalScale(10),
         backgroundColor: 'transparent',
     },
     trendingLoadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: moderateScale(20),
     },
     trendingLoadingText: {
-        marginTop: 10,
-        fontSize: 16,
+        marginTop: verticalScale(10),
+        fontSize: responsiveFontSize(16),
         color: '#666',
     },
     emptyTrendingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: moderateScale(20),
     },
     emptyTrendingText: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         color: '#666',
     },
     retryTrendingButton: {
         backgroundColor: '#406FF3',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
+        paddingVertical: verticalScale(10),
+        paddingHorizontal: scale(20),
+        borderRadius: moderateScale(5),
     },
     retryTrendingButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: 'bold',
     },
     trendingErrorText: {
         color: 'red',
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: verticalScale(20),
     },
 });
-
-export default MyCart;

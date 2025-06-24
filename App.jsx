@@ -23,6 +23,11 @@ import EditProfile from './src/pages/EditProfile';
 import AddressBook from './src/pages/AddressBook';
 import PaymentScreen from './src/pages/PaymentScreen';
 import OrderSuccess from './src/pages/OrderSuccess';
+import MapScreen from './src/pages/MapScreen';
+import BottomNavigationBar from './src/pages/BottomNavigationBar';
+
+
+
 const Stack = createNativeStackNavigator();
 
 function App() {
@@ -56,6 +61,8 @@ function App() {
           <Stack.Screen name = "AddressBook" component={AddressBook}/>
           <Stack.Screen name = "PaymentScreen" component={PaymentScreen} options={{ headerShown:false}}/>
           <Stack.Screen name = "OrderSuccess" component={OrderSuccess} options={{ headerShown:false}}/>
+          <Stack.Screen name="MapScreen" component={MapScreen} />
+          <Stack.Screen name =" BottomNavigationBar" component={ BottomNavigationBar}/>
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

@@ -3,6 +3,7 @@ import {
     View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
     ScrollView, Image, Dimensions
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 // Try different import methods if one doesn't work
 import RazorpayCheckout from 'react-native-razorpay';
@@ -349,7 +350,7 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIconLeft}>
-                    <Image source={require('../assets/images/arrowbtn.png')} style={styles.headerIcon} />
+                    <Icon name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Payment</Text>
             </View>
